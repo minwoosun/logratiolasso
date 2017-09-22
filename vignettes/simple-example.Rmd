@@ -1,0 +1,132 @@
+---
+title: "Log-ratio lasso simple example"
+author: "Stephen Bates"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Log-ratio lasso simple example}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Introduction
+
+In this document we walk through a simple example to show how to fit the constrained lasso, log-ratio lasso, and approximate forward stepwise selection.
+
+## Generate some data
+
+We first generate some data.  We generate
+$$
+y_i = \log(x_{i,1} / x_{i,2}) + \epsilon_i
+$$
+where $\epsilon_i$ are i.i.d. gaussian variables.
+
+
+```{r}
+library(logratio)
+devtools::load_all()
+
+set.seed(10)
+n <- 100 #number of observations
+p <- 20 #number of features
+
+x <- abs(matrix(rnorm(n*p), nrow = n)) #positive raw features
+w <- log(x) #logarithmically transformed features
+y <- w[, 1] - w[, 2] + rnorm(n) #response
+```
+
+## Constrained lasso
+
+We first fit the constrained lasso.  Note: `glment.constr` **requires that the data matrix and response be centered** when using real-valued responses.
+
+```{r}
+centered_w <- scale(w, center = TRUE, scale = FALSE)
+centered_y <- y - mean(y)
+
+model_fit <- glmnet.constr(centered_w, y, family = "gaussian")
+```
+
+This model fit contains a matrix of sparse contrasts given by the `beta` field.  Each
+row corresponds to a different choice of penalty parameter $\lambda$.
+
+```{r}
+dim(model_fit$beta)
+```
+
+To select the best choice of tuning parameter lambda, we use cross-validation:
+
+```{r}
+cv_model_fit <- cv.glmnet.constr(model_fit, x, y)
+```
+
+We can see the CV estimate of error and the sparse contrast selected by cross-validation:
+
+```{r}
+cv_model_fit$cvm #CV estimate of error
+```
+
+```{r}
+cv_model_fit$beta #best beta value
+```
+
+In our example, we see taht the coefficients corresponding to variables 1 and 2 are the largest by a wide margin, but the constrained lasso also selects quite a few other features.  Furthermore, the coefficients for the true ratio are too small due to the shrinkage.
+## Two stage procedure
+
+We now fit the two-stage log-ratio lasso.  Again, `two_stage` **requires that the data matrix and response be centered.**
+
+```{r, warning = FALSE}
+ts_model <- two_stage(centered_w, centered_y, k_max = 5)
+```
+
+The model fit object has a value `betas` that contains a list of coefficient matrices.  Each element of the list corresponds to a different value of $\lambda$.  Each column of the matrix corresponds to a different value of $k$, the number of ratios to select after screening.
+
+As an illustration we look at the models for a moderate value of penalty parameter $\lambda$:
+
+```{r}
+ts_model$betas[[50]]
+```
+
+We see that the first column corresponds to a model with one log-ratio.  The second correspons to a model with two log-ratios and so on.  The log-ratio with the largest coefficient is $\log(x_1 / x_2)$, as expected from the way we generated our data.
+
+We can jointly select the penalty parameter $\lambda$ and the number of ratios $k$ by cross-validation.
+
+```{r, warning = FALSE}
+cv_ts_model <- cv_two_stage(centered_w, centered_y, k_max = 5)
+```
+
+We can see the optimal value of the tuning paramters:
+
+```{r}
+cv_ts_model$lambda_min #index of best lambda
+cv_ts_model$k_min #number of ratios
+```
+
+We can also extract the resulting coefficient:
+
+```{r}
+cv_ts_model$beta_min
+```
+
+The two stage-model consists of only one log-ratio, and the coefficients are very close to the true value of 1.  If we want to instead inherit more of the shrinkage from the lasso, which may work better for some data sets, we can use the following conservative two-stage procedure:
+
+```{r, warning = FALSE}
+cv_ts_model2 <- cv_two_stage(centered_w, centered_y, k_max = 5, second.stage = "yhat")
+cv_ts_model2$beta_min
+```
+
+In our case, this results in *slightly* more regularization.  For data sets with a denser signal, the extra shrinkage may improve performance.
+
+## Approximate forward stepwise selection
+
+We now fit approximate forward stepwise selection.  We do not need to center the response vector and the features to use the `approximate_fs` function.
+
+```{r}
+afs_model <- approximate_fs(w, y, k_max = 5)
+afs_model$beta
+```
+The first column corresponds to 1 log-ratio, the second column correspons to 2 log-ratios, etc.  We can choose the number of ratios with cross-validation:
+
+```{r}
+
+
+```

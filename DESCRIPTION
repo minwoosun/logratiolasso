@@ -1,0 +1,19 @@
+Package: logratio
+Type: Package
+Title: Tools For Large Log Ratio Models
+Imports:
+    glmnet
+Version: 0.1.0
+Authors@R: c(person("Robert", "Tibshirani", role = "aut"),
+	person("Stephen", "Bates", email = "stephen6@stanford.edu", role = "cre"))
+Maintainer: Stephen Bates <stephen6@stanford.edu>
+Description: Implements constrained lasso, log-ratio lasso
+    and approximate forward stepwise.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Suggests: testthat,
+    knitr,
+    rmarkdown
+RoxygenNote: 6.0.1
+VignetteBuilder: knitr
