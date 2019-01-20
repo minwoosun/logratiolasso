@@ -9,7 +9,7 @@ To install this package on your machine, first install the devtools package
 ```r
 install.packages("devtools")
 ```
-and then use:
+and then use
 ```r
 library(devtools)
 install_github("stephenbates19/logratiolasso")
