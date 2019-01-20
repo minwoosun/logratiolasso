@@ -1,4 +1,4 @@
-Package: logratio
+Package: logratiolasso
 Type: Package
 Title: Tools For Large Log Ratio Models
 Imports:

@@ -11,7 +11,7 @@ vignette: >
 
 ## Introduction
 
-In this document we walk through a simple example to show how to fit the constrained lasso, log-ratio lasso, and approximate forward stepwise selection.
+In this document we walk through a simple example to show how to fit the constrained lasso, two-stage log-ratio lasso, and approximate forward stepwise selection.
 
 ## Generate some data
 
@@ -23,7 +23,7 @@ where $\epsilon_i$ are i.i.d. gaussian variables.
 
 
 ```{r}
-library(logratio)
+library(logratiolasso)
 devtools::load_all()
 
 set.seed(10)
@@ -56,7 +56,7 @@ dim(model_fit$beta)
 To select the best choice of tuning parameter lambda, we use cross-validation:
 
 ```{r}
-cv_model_fit <- cv.glmnet.constr(model_fit, x, y)
+cv_model_fit <- cv.glmnet.constr(model_fit, centered_w, y)
 ```
 
 We can see the CV estimate of error and the sparse contrast selected by cross-validation:
@@ -124,9 +124,12 @@ We now fit approximate forward stepwise selection.  We do not need to center the
 afs_model <- approximate_fs(w, y, k_max = 5)
 afs_model$beta
 ```
+
 The first column corresponds to 1 log-ratio, the second column correspons to 2 log-ratios, etc.  We can choose the number of ratios with cross-validation:
 
 ```{r}
-
-
+afs_cv <- cv_approximate_fs(x, y, k_max = 5, n_folds = 10)
+afs_cv$cvm
 ```
+
+The model with 1 log-ratio has the lowest CV estimate of error.

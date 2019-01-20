@@ -1,4 +1,4 @@
 library(testthat)
-library(logratio)
+library(logratiolasso)
 
-test_check("logratio")
+test_check("logratiolasso")
