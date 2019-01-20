@@ -70,6 +70,7 @@ cv_model_fit$beta #best beta value
 ```
 
 In our example, we see taht the coefficients corresponding to variables 1 and 2 are the largest by a wide margin, but the constrained lasso also selects quite a few other features.  Furthermore, the coefficients for the true ratio are too small due to the shrinkage.
+
 ## Two stage procedure
 
 We now fit the two-stage log-ratio lasso.  Again, `two_stage` **requires that the data matrix and response be centered.**

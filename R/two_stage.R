@@ -15,7 +15,7 @@
 #' @return lambda The grid of lambda values used for the fitting.
 #' @return selected_vars A matrix showing which log-terms are active at each step of the second-stage
 #' forward stepwise procedure.
-two_stage <- function(z, y, k_max = 20, lambda_1 = NULL, second.stage = "y", family = "gaussian", nlambda = 20, ...) {
+two_stage <- function(z, y, k_max = 10, lambda_1 = NULL, second.stage = "y", family = "gaussian", nlambda = 20, ...) {
   # executes two-stage procedure.
   # assumes centered response variable.
 
@@ -155,7 +155,7 @@ predict_two_stage <- function(z, y, new_z, family = "gaussian", lambda_1 = NULL,
 #' @return two_step_obj The two_step object fit on the full data.
 #' @return beta_min The parameter value selected by CV.
 #' @return lambda The grid of lambda values used.
-cv_two_stage <- function(z, y, family = "gaussian", lambda_1 = NULL, k_max = 5,
+cv_two_stage <- function(z, y, family = "gaussian", lambda_1 = NULL, k_max = 10,
                          n_folds = 10, nlambda = 20, folds = NULL, ...) {
   p <- ncol(z)
   #returns list of length lambda of vectors of size k_max with the prediction error.
