@@ -155,14 +155,18 @@ predict_two_stage <- function(z, y, new_z, lambda_1 = NULL, k_max = 5, nlambda =
 #' @return two_step_obj The two_step object fit on the full data.
 #' @return beta_min The parameter value selected by CV.
 #' @return lambda The grid of lambda values used.
-cv_two_stage <- function(z, y, lambda_1 = NULL, k_max = 5, n_folds = 10, nlambda = 20, ...) {
+cv_two_stage <- function(z, y, lambda_1 = NULL, k_max = 5, n_folds = 10, nlambda = 20, folds = NULL, ...) {
   p <- ncol(z)
   #returns list of length lambda of vectors of size k_max with the prediction error.
   two_step_obj <- two_stage(z, y, lambda_1 = lambda_1, k_max = k_max, nlambda = nlambda, ...)
   lambda_1 <- two_step_obj$lambda
 
-  #Create 10 equally size folds
-  folds <- sample(cut(seq(1,nrow(z)),breaks=n_folds,labels=FALSE))
+  #Create equally size folds
+  if(is.null(folds)) {
+    folds <- sample(cut(seq(1,nrow(z)),breaks=n_folds,labels=FALSE))
+  } else {
+    n_folds = max(folds) - min(folds) + 1
+  }
 
   #Perform 10 fold cross validation
   mse <- list()
