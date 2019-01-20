@@ -1,3 +1,3 @@
 # logratiolasso
 
-A R implementation of the log-ratio lasso methods from Bates and Tibshrani 2019 (https://arxiv.org/abs/1709.01139).
+A R implementation of the methods from "Log-ratio Lasso: Scalable, Sparse Estimation for Log-ratio Models" by Stephen Bates and Robert Tibshrani (https://arxiv.org/abs/1709.01139).
