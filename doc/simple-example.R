@@ -1,6 +1,5 @@
 ## ------------------------------------------------------------------------
 library(logratiolasso)
-devtools::load_all()
 
 set.seed(10)
 n <- 100 #number of observations

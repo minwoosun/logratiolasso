@@ -84,9 +84,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 y_i = \log(x_{i,1} / x_{i,2}) + \epsilon_i
 \]</span> where <span class="math inline">\(\epsilon_i\)</span> are i.i.d. gaussian variables.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(logratiolasso)
-devtools<span class="op">::</span><span class="kw">load_all</span>()</code></pre></div>
-<pre><code>## Loading logratiolasso</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">10</span>)
+
+<span class="kw">set.seed</span>(<span class="dv">10</span>)
 n &lt;-<span class="st"> </span><span class="dv">100</span> <span class="co">#number of observations</span>
 p &lt;-<span class="st"> </span><span class="dv">20</span> <span class="co">#number of features</span>
 
