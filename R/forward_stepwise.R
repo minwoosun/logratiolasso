@@ -1,4 +1,4 @@
-custom_fs <- function(expanded_set, resp, k_max, selected_vars, p) {
+custom_fs <- function(expanded_set, resp, k_max, selected_vars, p, family = "gaussian") {
   #wrapper of myfs function for internal use
 
   if(k_max <= 0) {
@@ -18,7 +18,7 @@ myfs <- function(x,y,nsteps=min(nrow(x),ncol(x)),center=T, family="gaussian"){
   # note at this point, it always uses Gaussian model for the stepwise calculation.
   #  but with family="binomial", it returns logistic reg coefs
   #returns:
-  #  pred,s =predictors and their signs, in order entered 
+  #  pred,s =predictors and their signs, in order entered
   #  scor, bhat: scaled ip and ls coef for each predictor entered
   # sigmahat:  est of error variance;
   # rss of each model
@@ -34,7 +34,7 @@ myfs <- function(x,y,nsteps=min(nrow(x),ncol(x)),center=T, family="gaussian"){
   }
 
   nv=.5*(1+sqrt(1+4*2*p));
-  
+
   #construct matrix indices
   thmat=matrix(NA,nv,nv)
   suppressWarnings(thmat[row(thmat)>col(thmat)] <- 1:p)
@@ -80,7 +80,7 @@ myfs <- function(x,y,nsteps=min(nrow(x),ncol(x)),center=T, family="gaussian"){
       beta[[j]]=junk$coef[-1]
       b0[j]=junk$coef[j]
     }
-    
+
     #  if(family=="binomial") junk=glm(y.orig~x[,pred[1:j],drop=F],family="binomial")
     if(family=="binomial") {
       junk=glmnet(x[,pred[1:j],drop=F],y.orig,alpha=.05,standardize=FALSE,family="binomial")
@@ -89,7 +89,7 @@ myfs <- function(x,y,nsteps=min(nrow(x),ncol(x)),center=T, family="gaussian"){
       if(sum(is.na(beta[[j]]))>0) {browser()}
       b0[j]=junk$a0[nlam]
     }
-      
+
   }
   prss=rss/sum( (y-mean(y))^2)
   return(list(pred=pred,ind=ind,s=s,scor=scor,b0=b0,beta=beta,sigmahat=sigmahat,rss=rss,prss=prss))
@@ -105,7 +105,7 @@ n=length(y)
 # note at this point, it always uses Gaussian model for the stepwise calculation.
 #  but with family="binomial", it returns logistic reg coefs
 #returns:
-#  pred,s =predictors and their signs, in order entered 
+#  pred,s =predictors and their signs, in order entered
 #  scor, bhat: scaled ip and ls coef for each predictor entered
 # sigmahat:  est of error variance;
 # rss of each model
@@ -118,7 +118,7 @@ x=scale(x,T,F)
 y=y-mean(y)
 }
 
-out=fs(x, y, maxsteps =nsteps, intercept = FALSE, 
+out=fs(x, y, maxsteps =nsteps, intercept = FALSE,
     normalize = FALSE, verbose = verbose)
 
 

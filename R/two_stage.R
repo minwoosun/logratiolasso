@@ -15,13 +15,13 @@
 #' @return lambda The grid of lambda values used for the fitting.
 #' @return selected_vars A matrix showing which log-terms are active at each step of the second-stage
 #' forward stepwise procedure.
-two_stage <- function(z, y, k_max = 20, lambda_1 = NULL, second.stage = "y", nlambda = 20, ...) {
+two_stage <- function(z, y, k_max = 20, lambda_1 = NULL, second.stage = "y", family = "gaussian", nlambda = 20, ...) {
   # executes two-stage procedure.
   # assumes centered response variable.
 
   p <- ncol(z)
 
-  constrained_fit <- glmnet.constr(z, y, family = "gaussian", lambda = lambda_1, nlambda = nlambda, ...)
+  constrained_fit <- glmnet.constr(z, y, family = family, lambda = lambda_1, nlambda = nlambda, ...)
   lambda_1 <- constrained_fit$lambda
   betas <- constrained_fit$beta
   #print(betas)
@@ -43,7 +43,7 @@ two_stage <- function(z, y, k_max = 20, lambda_1 = NULL, second.stage = "y", nla
       d <- sum(selected_vars[, i]) - 1
       k <- min(d, k_max)
 
-      suppressWarnings(output[[i]] <- custom_fs(expanded_set, resp, k, selected_vars[, i], p))
+      suppressWarnings(output[[i]] <- custom_fs(expanded_set, resp, k, selected_vars[, i], p, family = ))
       #print(output[[i]])
     } else {
       output[[i]] <- NA
@@ -112,7 +112,7 @@ out_to_beta <- function(obj, k, p) {
 }
 
 
-predict_two_stage <- function(z, y, new_z, lambda_1 = NULL, k_max = 5, nlambda = 20, ...) {
+predict_two_stage <- function(z, y, new_z, family = "gaussian", lambda_1 = NULL, k_max = 5, nlambda = 20, ...) {
   # forms predictions on new data from two_stage model
   # output is list of size length(lambda_1)
   # each entry is matrix of length ncol(new_z) and width k_max
@@ -155,10 +155,11 @@ predict_two_stage <- function(z, y, new_z, lambda_1 = NULL, k_max = 5, nlambda =
 #' @return two_step_obj The two_step object fit on the full data.
 #' @return beta_min The parameter value selected by CV.
 #' @return lambda The grid of lambda values used.
-cv_two_stage <- function(z, y, lambda_1 = NULL, k_max = 5, n_folds = 10, nlambda = 20, folds = NULL, ...) {
+cv_two_stage <- function(z, y, family = "gaussian", lambda_1 = NULL, k_max = 5,
+                         n_folds = 10, nlambda = 20, folds = NULL, ...) {
   p <- ncol(z)
   #returns list of length lambda of vectors of size k_max with the prediction error.
-  two_step_obj <- two_stage(z, y, lambda_1 = lambda_1, k_max = k_max, nlambda = nlambda, ...)
+  two_step_obj <- two_stage(z, y, family = family, lambda_1 = lambda_1, k_max = k_max, nlambda = nlambda, ...)
   lambda_1 <- two_step_obj$lambda
 
   #Create equally size folds
@@ -175,7 +176,7 @@ cv_two_stage <- function(z, y, lambda_1 = NULL, k_max = 5, n_folds = 10, nlambda
       #Segement your data by fold using the which() function
       test_indices <- which(folds==i,arr.ind=TRUE)
       out <- predict_two_stage(z[-test_indices, ], y[-test_indices], new_z = z[test_indices, ],
-                                      lambda_1 = lambda_1, k_max = k_max, nlambda = nlambda,...)
+                              lambda_1 = lambda_1, k_max = k_max, nlambda = nlambda, family = family...)
 
       mse_fun <- function(y_pred) {
         if(!is.null(ncol(y_pred))) {
