@@ -83,14 +83,14 @@ The model fit object has a value `betas` that contains a list of coefficient mat
 As an illustration we look at the models for a moderate value of penalty parameter $\lambda$:
 
 ```{r}
-ts_model$betas[[50]]
+ts_model$betas[[10]]
 ```
 
 We see that the first column corresponds to a model with one log-ratio.  The second correspons to a model with two log-ratios and so on.  The log-ratio with the largest coefficient is $\log(x_1 / x_2)$, as expected from the way we generated our data.
 
 We can jointly select the penalty parameter $\lambda$ and the number of ratios $k$ by cross-validation.
 
-```{r, warning = FALSE}
+```{r}
 cv_ts_model <- cv_two_stage(centered_w, centered_y, k_max = 5)
 ```
 

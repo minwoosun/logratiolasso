@@ -15,13 +15,13 @@
 #' @return lambda The grid of lambda values used for the fitting.
 #' @return selected_vars A matrix showing which log-terms are active at each step of the second-stage
 #' forward stepwise procedure.
-two_stage <- function(z, y, k_max = 20, lambda_1 = NULL, second.stage = c("y", "yhat"), ...) {
-  # executes two-stage procedure.  
+two_stage <- function(z, y, k_max = 20, lambda_1 = NULL, second.stage = "y", nlambda = 20, ...) {
+  # executes two-stage procedure.
   # assumes centered response variable.
 
   p <- ncol(z)
-  
-  constrained_fit <- glmnet.constr(z, y, family = "gaussian", lambda = lambda_1, ...)
+
+  constrained_fit <- glmnet.constr(z, y, family = "gaussian", lambda = lambda_1, nlambda = nlambda, ...)
   lambda_1 <- constrained_fit$lambda
   betas <- constrained_fit$beta
   #print(betas)
@@ -30,26 +30,26 @@ two_stage <- function(z, y, k_max = 20, lambda_1 = NULL, second.stage = c("y", "
 
   output <- list()
   for (i in 1:length(lambda_1)) {
-    if(sum(selected_vars[, i] > 0)) {
+    if(sum(selected_vars[, i]) > 0) {
       #print(paste0("which: i",i))
       #print(selected_vars)
       expanded_set <- small_to_big_z(z, which(selected_vars[, i]))
       y_hat <- z %*% betas[, i]
-      resp <- y  
+      resp <- y
       if(second.stage == "yhat") {
         resp <- y_hat
       }
-      
+
       d <- sum(selected_vars[, i]) - 1
       k <- min(d, k_max)
-  
-      output[[i]] <- custom_fs(expanded_set, resp, k, selected_vars[, i], p)
+
+      suppressWarnings(output[[i]] <- custom_fs(expanded_set, resp, k, selected_vars[, i], p))
       #print(output[[i]])
     } else {
       output[[i]] <- NA
     }
   }
-  
+
   betas <- lapply(output, function(x) {out_to_beta(x, k_max, p)})
 
   list(betas = betas, coef = output, lambda = lambda_1, selected_vars = selected_vars)
@@ -61,7 +61,7 @@ out_to_beta <- function(obj, k, p) {
   #internal helper function
 
   betas <- matrix(0, p, k)
-  
+
   if(sum(is.na(obj)) > 0) {
     return(betas)
   } else if (class(obj) != "list") {
@@ -74,28 +74,28 @@ out_to_beta <- function(obj, k, p) {
   if(d == 0) {
     return(betas)
   }
-  
+
   # print(obj$subset)
   # print(obj$theta_ind)
   # print(paste0("d:", d))
   # print(dim(betas))
   # print(paste0("p:", p))
-  
+
   for(i in 1:d) {
     beta <- rep(0, p)
-    
+
     # print(i)
     # print(obj$subset[obj$theta_ind[i,1]])
     # print(obj$subset[obj$theta_ind[i,2]])
     # print(obj$theta_vals[[i]])
 
-    for(j in 1:i){ 
-      beta[obj$subset[obj$theta_ind[j,1]]] <- beta[obj$subset[obj$theta_ind[j,1]]] + 
+    for(j in 1:i){
+      beta[obj$subset[obj$theta_ind[j,1]]] <- beta[obj$subset[obj$theta_ind[j,1]]] +
         obj$theta_vals[[i]][j]
-      beta[obj$subset[obj$theta_ind[j,2]]] <- beta[obj$subset[obj$theta_ind[j,2]]] - 
+      beta[obj$subset[obj$theta_ind[j,2]]] <- beta[obj$subset[obj$theta_ind[j,2]]] -
         obj$theta_vals[[i]][j]
     }
-    
+
     # print(paste0("i completed"))
     betas[, i] <- beta
   }
@@ -112,27 +112,27 @@ out_to_beta <- function(obj, k, p) {
 }
 
 
-predict_two_stage <- function(z, y, new_z, lambda_1 = NULL, k_max = 5, ...) {
+predict_two_stage <- function(z, y, new_z, lambda_1 = NULL, k_max = 5, nlambda = 20, ...) {
   # forms predictions on new data from two_stage model
   # output is list of size length(lambda_1)
   # each entry is matrix of length ncol(new_z) and width k_max
   # intended for internal use with "cv_two_stage" functions
 
   p <- ncol(z)
-  fit <- two_stage(z, y, lambda_1 = lambda_1, k_max = k_max, ...)
+  fit <- two_stage(z, y, lambda_1 = lambda_1, k_max = k_max, nlambda = nlambda, ...)
   #print(fit$coef)
   betas <- lapply(fit$coef, function(obj){out_to_beta(obj, k_max, p)})
-  
+
   predictor <- function(betas) {
     if(!is.null(ncol(betas))) {
       return(apply(betas,2,function(b){new_z %*% b}))
     }
     return(matrix(rep(new_z %*% betas, k_max), ncol = k_max, byrow = FALSE))
   }
-  
+
   y_pred <- lapply(betas, predictor)
   #list of n_pred by k matrix of predictions
-  
+
   out <- list(two_step_obj = fit, y_pred = y_pred)
   out
 }
@@ -155,12 +155,12 @@ predict_two_stage <- function(z, y, new_z, lambda_1 = NULL, k_max = 5, ...) {
 #' @return two_step_obj The two_step object fit on the full data.
 #' @return beta_min The parameter value selected by CV.
 #' @return lambda The grid of lambda values used.
-cv_two_stage <- function(z, y, lambda_1 = NULL, k_max = 5, n_folds = 10, ...) {
+cv_two_stage <- function(z, y, lambda_1 = NULL, k_max = 5, n_folds = 10, nlambda = 20, ...) {
   p <- ncol(z)
   #returns list of length lambda of vectors of size k_max with the prediction error.
-  two_step_obj <- two_stage(z, y, lambda_1 = lambda_1, k_max = k_max, ...)
+  two_step_obj <- two_stage(z, y, lambda_1 = lambda_1, k_max = k_max, nlambda = nlambda, ...)
   lambda_1 <- two_step_obj$lambda
-  
+
   #Create 10 equally size folds
   folds <- sample(cut(seq(1,nrow(z)),breaks=n_folds,labels=FALSE))
 
@@ -168,11 +168,11 @@ cv_two_stage <- function(z, y, lambda_1 = NULL, k_max = 5, n_folds = 10, ...) {
   mse <- list()
   for(i in 1:n_folds){
       #print(paste0("entering fold", i))
-      #Segement your data by fold using the which() function 
+      #Segement your data by fold using the which() function
       test_indices <- which(folds==i,arr.ind=TRUE)
       out <- predict_two_stage(z[-test_indices, ], y[-test_indices], new_z = z[test_indices, ],
-                                      lambda_1 = lambda_1, k_max = k_max, ...)
-      
+                                      lambda_1 = lambda_1, k_max = k_max, nlambda = nlambda,...)
+
       mse_fun <- function(y_pred) {
         if(!is.null(ncol(y_pred))) {
           if(ncol(y_pred > 1)) {
@@ -183,8 +183,8 @@ cv_two_stage <- function(z, y, lambda_1 = NULL, k_max = 5, n_folds = 10, ...) {
       }
       mse[[i]] <- lapply(out$y_pred, mse_fun)
   }
-  
-  
+
+
   mse_full <- lapply(mse[[1]], function(x){x / n_folds})
   #print(length(mse_full))
   for(i in 1:n_folds) {
@@ -197,8 +197,8 @@ cv_two_stage <- function(z, y, lambda_1 = NULL, k_max = 5, n_folds = 10, ...) {
   lambda_min <- best[1,2]
   k_min <- best[1,1]
   beta_min <- out_to_beta(two_step_obj$coef[[lambda_min]], k_max, p)[, k_min]
-  
-  list(mse = mse_full, best_params = best, lambda_min = lambda_min, k_min = k_min, 
+
+  list(mse = mse_full, best_params = best, lambda_min = lambda_min, k_min = k_min,
        two_step_obj = two_step_obj, beta_min = beta_min, lambda = lambda_1)
 }
 
