@@ -119,7 +119,7 @@ predict_two_stage <- function(z, y, new_z, family = "gaussian", lambda_1 = NULL,
   # intended for internal use with "cv_two_stage" functions
 
   p <- ncol(z)
-  fit <- two_stage(z, y, lambda_1 = lambda_1, k_max = k_max, nlambda = nlambda, ...)
+  fit <- two_stage(z, y, lambda_1 = lambda_1, k_max = k_max, nlambda = nlambda, family = family, ...)
   #print(fit$coef)
   betas <- lapply(fit$coef, function(obj){out_to_beta(obj, k_max, p)})
 
@@ -176,15 +176,26 @@ cv_two_stage <- function(z, y, family = "gaussian", lambda_1 = NULL, k_max = 10,
       #Segement your data by fold using the which() function
       test_indices <- which(folds==i,arr.ind=TRUE)
       out <- predict_two_stage(z[-test_indices, ], y[-test_indices], new_z = z[test_indices, ],
-                              lambda_1 = lambda_1, k_max = k_max, nlambda = nlambda, family = family...)
+                              lambda_1 = lambda_1, k_max = k_max, nlambda = nlambda, family = family, ...)
 
-      mse_fun <- function(y_pred) {
-        if(!is.null(ncol(y_pred))) {
-          if(ncol(y_pred > 1)) {
-            return(apply(y_pred,2,function(yp){sum((yp - y[test_indices])**2)}))
+      if(family == "gaussian") {
+        mse_fun <- function(y_pred) {
+          if(!is.null(ncol(y_pred))) {
+            if(ncol(y_pred > 1)) {
+              return(apply(y_pred,2,function(yp){sum((yp - y[test_indices])**2)}))
+            }
           }
+          sum((yp - y[test_indices])**2)
         }
-        sum((y_pred - y[test_indices])**2)
+      } else if (family == "binomial") {
+        mse_fun <- function(y_pred) {
+          if(!is.null(ncol(y_pred))) {
+            if(ncol(y_pred > 1)) {
+              return(apply(y_pred,2,function(yp){sum(log(1 + exp(-(2*y[test_indices] - 1) * y_pred)))}))
+            }
+          }
+          sum(log(1 + exp(-(2*y[test_indices] - 1) * y_pred)))
+        }
       }
       mse[[i]] <- lapply(out$y_pred, mse_fun)
 
@@ -210,4 +221,6 @@ cv_two_stage <- function(z, y, family = "gaussian", lambda_1 = NULL, k_max = 10,
   list(mse = mse_full, best_params = best, lambda_min = lambda_min, k_min = k_min,
        two_step_obj = two_step_obj, beta_min = beta_min, lambda = lambda_1)
 }
+
+
 
