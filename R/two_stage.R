@@ -43,7 +43,7 @@ two_stage <- function(z, y, k_max = 10, lambda_1 = NULL, second.stage = "y", fam
       d <- sum(selected_vars[, i]) - 1
       k <- min(d, k_max)
 
-      suppressWarnings(output[[i]] <- custom_fs(expanded_set, resp, k, selected_vars[, i], p, family = ))
+      suppressWarnings(output[[i]] <- custom_fs(expanded_set, resp, k, selected_vars[, i], p, family = family))
       #print(output[[i]])
     } else {
       output[[i]] <- NA
@@ -169,10 +169,10 @@ cv_two_stage <- function(z, y, family = "gaussian", lambda_1 = NULL, k_max = 10,
     n_folds = max(folds) - min(folds) + 1
   }
 
-  #Perform 10 fold cross validation
+  #Perform k-fold cross validation
   mse <- list()
   for(i in 1:n_folds){
-      #print(paste0("entering fold", i))
+      print(paste0("Starting CV fold ", i))
       #Segement your data by fold using the which() function
       test_indices <- which(folds==i,arr.ind=TRUE)
       out <- predict_two_stage(z[-test_indices, ], y[-test_indices], new_z = z[test_indices, ],
@@ -187,12 +187,16 @@ cv_two_stage <- function(z, y, family = "gaussian", lambda_1 = NULL, k_max = 10,
         sum((y_pred - y[test_indices])**2)
       }
       mse[[i]] <- lapply(out$y_pred, mse_fun)
-  }
 
+      #glmnet may return fewer than nlambda entries if convergence fails
+      while(length(mse[[i]]) < nlambda) {
+        mse[[i]][[length(mse[[i]]) + 1]] = rep(Inf, k)
+      }
+  }
 
   mse_full <- lapply(mse[[1]], function(x){x / n_folds})
   #print(length(mse_full))
-  for(i in 1:n_folds) {
+  for(i in 2:n_folds) {
     for(j in 1:length(mse[[1]])) {
       mse_full[[j]] <- mse_full[[j]] + mse[[i]][[j]] / n_folds
     }
