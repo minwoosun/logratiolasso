@@ -46,7 +46,7 @@ glmnet.constr=function(x,y,family = c("gaussian", "binomial"),alpha=1,nlambda=10
      w=c(rep(1,n),n*100,n*100)
     w=w/sum(w)
     # I may want to include an intercept here, but having trouble getting sum b==0
-    ggg=glmnet::glmnet(xx,yy,standardize=F,intercept=F,family=family,weights=w,lower.limits=rep(0,ncol(xx)+1),upper.limits=rep(Inf,ncol(xx)+1),alpha=alpha,nlambda=nlambda,lambda.min.ratio=lambda.min.ratio,...)
+    ggg=glmnet::glmnet(xx,yy,standardize=F,intercept=F,family=family,weights=w,lower.limits=rep(0,ncol(xx)+1),upper.limits=rep(Inf,ncol(xx)+1),alpha=alpha,nlambda=nlambda,lambda=lambda,lambda.min.ratio=lambda.min.ratio,...)
   }
 
   b=ggg$beta[1:p,]-ggg$beta[-(1:p),]
