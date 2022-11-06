@@ -12,5 +12,5 @@ install.packages("devtools")
 and then use
 ```r
 library(devtools)
-install_github("stephenbates19/logratiolasso")
+install_github("minwoosun/logratiolasso")
 ```
