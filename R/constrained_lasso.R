@@ -20,7 +20,7 @@
 #' y <- x[, 1] - x[, 2] + .1 * rnorm(n)
 #' y <- y - mean(y)
 #' fit1 <- glmnet.constr(x, y, family = "gaussian")
-glmnet.constr=function(x,y,family = c("gaussian", "binomial"),alpha=1,nlambda=100,lambda.min.ratio=.01,lambda=NULL,...){
+glmnet.constr2=function(x,y,family = c("gaussian", "binomial"),alpha=1,nlambda=100,lambda.min.ratio=.01,lambda=NULL,...){
 # glmnet with constraint sum beta=0
 # Gaussian case: make sure y is centered.
 # Binomial case: does not include an intercept
